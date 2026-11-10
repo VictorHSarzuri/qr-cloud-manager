@@ -6,8 +6,12 @@ DATABASE_URL = os.getenv(
     "postgresql://user:pass@localhost:5432/qr_db"
 )
 
-# Render / Supabase / Neon require SSL connection
-engine = create_engine(DATABASE_URL, echo=True, connect_args={"sslmode": "require"} if "postgresql" in DATABASE_URL else {})
+# Forzamos connect_args para asegurar compatibilidad de red y SSL
+engine = create_engine(
+    DATABASE_URL, 
+    echo=True, 
+    connect_args={"sslmode": "require"}
+)
 
 def get_session():
     with Session(engine) as session:
