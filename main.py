@@ -81,12 +81,16 @@ def render_dashboard_view():
         ui.button('Cerrar Sesión', on_click=logout).props('flat color=negative')
 
     with ui.row().classes('w-full p-6 gap-6'):
+        # Columna Izquierda: Generador
         with ui.card().classes('w-1/2 p-6'):
             ui.label('Generar Nuevo Código QR').classes('text-xl font-bold mb-4')
             title_input = ui.input('Título o Descripción del QR').classes('w-full')
             content_input = ui.textarea('Texto o URL a codificar').classes('w-full')
             
             qr_display = ui.column().classes('mt-4 items-center w-full')
+
+            # Definimos primero refresh_history para poder llamarla al guardar
+            history_container = None # Se inicializa abajo, pero la referenciamos con seguridad
 
             def generate_qr():
                 if not content_input.value or not title_input.value:
@@ -96,9 +100,15 @@ def render_dashboard_view():
                 title = title_input.value
                 content = content_input.value
                 
-                with Session(engine) as session:
-                    crud.save_qr_history(session, user_id, title, content)
+                # 1. Guardar en la base de datos Supabase mediante crud
+                try:
+                    with Session(engine) as session:
+                        crud.save_qr_history(session, user_id, title, content)
+                except Exception as e:
+                    ui.notify(f'Error al guardar en BD: {str(e)}', color='negative')
+                    return
                 
+                # 2. Mostrar imagen generada
                 qr_display.clear()
                 with qr_display:
                     qr_base64 = get_qr_image_base64(content)
@@ -118,10 +128,13 @@ def render_dashboard_view():
                             ui.notify('Exportando PDF...', color='info')
                         ui.button('Exportar PDF', on_click=download_pdf, icon='picture_as_pdf').props('color=secondary')
 
+                # 3. Actualizar la vista del historial automáticamente
                 refresh_history()
+                ui.notify('¡QR guardado con éxito!', color='positive')
 
             ui.button('Crear y Guardar QR', on_click=generate_qr).props('color=primary').classes('mt-4')
 
+        # Columna Derecha: Historial
         with ui.card().classes('w-1/2 p-6'):
             ui.label('Tu Historial en la Nube').classes('text-xl font-bold mb-4')
             history_container = ui.column().classes('w-full overflow-y-auto max-h-96')
@@ -134,6 +147,7 @@ def render_dashboard_view():
                     
                     if not items:
                         ui.label('No tienes códigos generados aún.').classes('text-gray-400')
+                        return
                     
                     for item in items:
                         with ui.card().classes('w-full p-3 mb-2 bg-gray-50'):
@@ -141,6 +155,7 @@ def render_dashboard_view():
                             ui.label(f"Contenido: {item.content}").classes('text-xs text-gray-600 truncate')
                             ui.label(f"Creado: {item.created_at.strftime('%Y-%m-%d %H:%M')}").classes('text-xs text-gray-400')
 
+            # Cargar el historial al abrir el dashboard
             refresh_history()
 
 port = int(os.environ.get("PORT", 8080))
