@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: qr-cloud-manager
+    env: docker
+    plan: free
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: PORT
+        value: 8080
