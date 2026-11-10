@@ -11,9 +11,6 @@ from exporters import generate_qr_svg, generate_qr_pdf
 
 SQLModel.metadata.create_all(engine)
 
-app.storage.user['user_id'] = None
-app.storage.user['username'] = None
-
 def get_qr_image_base64(data: str) -> str:
     qr = qrcode.QRCode(version=1, box_size=10, border=2)
     qr.add_data(data)
