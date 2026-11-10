@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Optional
 from sqlmodel import SQLModel, Field
 
@@ -12,4 +12,4 @@ class QRHistory(SQLModel, table=True):
     user_id: int = Field(foreign_key="user.id")
     content: str
     title: str
-    created_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
